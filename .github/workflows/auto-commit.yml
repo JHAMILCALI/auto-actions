@@ -38,6 +38,9 @@ jobs:
 
           echo "Hoy se harán $COMMITS commits"
 
+          # Crear archivo si no existe
+          touch activity.txt
+
           for i in $(seq 1 $COMMITS)
           do
             echo "Auto commit $i - $(date)" >> activity.txt
@@ -45,6 +48,8 @@ jobs:
             git commit -m "Auto commit $i"
           done
 
-      - name: Push changes
+      - name: Pull latest changes & push
         run: |
+          git fetch origin main
+          git rebase origin/main
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
