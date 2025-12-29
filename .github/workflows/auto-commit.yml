@@ -1,5 +1,4 @@
 name: Auto daily commits
-
 on:
   schedule:
     - cron: '0 14 * * *' # 10:00 AM Bolivia
@@ -8,26 +7,34 @@ on:
 permissions:
   contents: write
 
+# Prevenir ejecuciones concurrentes
+concurrency:
+  group: auto-commits
+  cancel-in-progress: false
+
 jobs:
   commit-job:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
       - name: Set Git config
         run: |
           git config user.name "GitHub Bot"
           git config user.email "jhamilquea@gmail.com"
-
+      
+      - name: Pull latest changes
+        run: |
+          git pull origin main --rebase
+      
       - name: Make random commits
         run: |
           # Elegir rango aleatorio: 1 (2–4), 2 (5–9), 3 (10–15)
           RANGE=$((RANDOM % 3 + 1))
-
           if [ "$RANGE" -eq 1 ]; then
             COMMITS=$((RANDOM % 3 + 2))   # 2–4
           elif [ "$RANGE" -eq 2 ]; then
@@ -35,21 +42,45 @@ jobs:
           else
             COMMITS=$((RANDOM % 6 + 10))  # 10–15
           fi
-
+          
           echo "Hoy se harán $COMMITS commits"
-
+          
           # Crear archivo si no existe
           touch activity.txt
-
+          
           for i in $(seq 1 $COMMITS)
           do
             echo "Auto commit $i - $(date)" >> activity.txt
             git add activity.txt
             git commit -m "Auto commit $i"
+            
+            # Pequeña pausa entre commits (opcional)
+            sleep 1
           done
-
-      - name: Pull latest changes & push
+      
+      - name: Push changes with retry
         run: |
-          git fetch origin main
-          git rebase origin/main
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            # Intentar hacer pull antes de push
+            git pull origin main --rebase || true
+            
+            # Intentar push
+            if git push origin main; then
+              echo "✅ Push exitoso"
+              exit 0
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              echo "⚠️ Intento $RETRY_COUNT de $MAX_RETRIES falló"
+              
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "Esperando 5 segundos antes de reintentar..."
+                sleep 5
+              fi
+            fi
+          done
+          
+          echo "❌ Push falló después de $MAX_RETRIES intentos"
+          exit 1
