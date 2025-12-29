@@ -2,7 +2,7 @@ name: Auto daily commits
 
 on:
   schedule:
-    - cron: '0 14 * * *' # todos los días 10:00 AM Bolivia (UTC-4)
+    - cron: '0 14 * * *' # 10:00 AM Bolivia
   workflow_dispatch:
 
 permissions:
@@ -45,7 +45,6 @@ jobs:
             git commit -m "Auto commit $i"
           done
 
-      - name: Pull & Push changes
+      - name: Push changes
         run: |
-          git pull --rebase
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
