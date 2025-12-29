@@ -1,0 +1,32 @@
+name: Auto daily commits
+
+on:
+  schedule:
+    - cron: '0 14 * * *' # todos los días 10:00 AM Bolivia
+  workflow_dispatch:
+
+jobs:
+  commit-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set Git config
+        run: |
+          git config user.name "GitHub Bot"
+          git config user.email "jhamilquea@gmail.com"
+
+      - name: Make commits
+        run: |
+          for i in {1..15}
+          do
+            echo "Auto commit $i - $(date)" >> activity.txt
+            git add activity.txt
+            git commit -m "Auto commit $i"
+          done
+
+      - name: Push changes
+        run: |
+          git push
