@@ -33,19 +33,11 @@ jobs:
       
       - name: Make random commits
         run: |
-          # Elegir rango aleatorio: 1 (2–4), 2 (5–9), 3 (10–15)
-          RANGE=$((RANDOM % 3 + 1))
-          if [ "$RANGE" -eq 1 ]; then
-            COMMITS=$((RANDOM % 3 + 2))   # 2–4
-          elif [ "$RANGE" -eq 2 ]; then
-            COMMITS=$((RANDOM % 5 + 5))   # 5–9
-          else
-            COMMITS=$((RANDOM % 6 + 10))  # 10–15
-          fi
+          # Número aleatorio entre 10 y 18
+          COMMITS=$((RANDOM % 9 + 10))  # 10–18
           
           echo "Hoy se harán $COMMITS commits"
           
-          # Crear archivo si no existe
           touch activity.txt
           
           for i in $(seq 1 $COMMITS)
@@ -53,8 +45,6 @@ jobs:
             echo "Auto commit $i - $(date)" >> activity.txt
             git add activity.txt
             git commit -m "Auto commit $i"
-            
-            # Pequeña pausa entre commits (opcional)
             sleep 1
           done
       
